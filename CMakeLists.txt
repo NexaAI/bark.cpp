@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project("bark" C CXX)
 
-set(BARK_BUILD_EXAMPLES ON)
+option(BARK_BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 if (NOT XCODE AND NOT MSVC AND NOT CMAKE_BUILD_TYPE)
