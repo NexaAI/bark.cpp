@@ -173,6 +173,16 @@ static void write_safe(std::ofstream& fout, T& dest) {
     fout.write((char*)&dest, sizeof(T));
 }
 
+static inline int64_t get_time_us() {
+    static bool initialized = false;
+    if (!initialized) {
+        ggml_time_init();
+        initialized = true;
+    }
+
+    return ggml_time_us();
+}
+
 static void bark_print_statistics(gpt_model* model) {
     printf("\n\n");
     printf("%s:   sample time = %8.2f ms / %lld tokens\n", __func__, model->t_sample_us / 1000.0f, model->n_sample);
@@ -254,7 +264,7 @@ static bark_token gpt_sample(
     float* eos_p,
     int64_t* t_sample_us,
     int64_t* n_sample) {
-    int64_t t_sample_start_us = ggml_time_us();
+    int64_t t_sample_start_us = get_time_us();
 
     bark_token res;
     if (temp == 0.0f) {
@@ -263,7 +273,7 @@ static bark_token gpt_sample(
         res = gpt_multinomial_sample(logits, rng, temp, eos_p);
     }
 
-    int64_t t_sample_end_us = ggml_time_us();
+    int64_t t_sample_end_us = get_time_us();
     *t_sample_us += (t_sample_end_us - t_sample_start_us);
     *n_sample += 1;
 
@@ -1175,7 +1185,7 @@ static bool bark_load_model_from_file(
 }
 
 struct bark_context* bark_load_model(const char* model_path, struct bark_context_params params, uint32_t seed) {
-    int64_t t_load_start_us = ggml_time_us();
+    int64_t t_load_start_us = get_time_us();
 
     struct bark_context* bctx = new bark_context();
 
@@ -1188,7 +1198,7 @@ struct bark_context* bark_load_model(const char* model_path, struct bark_context
 
     bctx->rng = std::mt19937(seed);
     bctx->params = params;
-    bctx->stats.t_load_us = ggml_time_us() - t_load_start_us;
+    bctx->stats.t_load_us = get_time_us() - t_load_start_us;
 
     return bctx;
 }
@@ -1637,7 +1647,7 @@ static bool bark_eval_encoder_internal(
     auto& hparams = model.hparams;
     const int n_vocab = hparams.n_out_vocab;
 
-    const int64_t t_predict_us_start = ggml_time_us();
+    const int64_t t_predict_us_start = get_time_us();
 
     // reset the allocator to free all the memory allocated during the previous inference
     ggml_allocr_reset(allocr);
@@ -1674,7 +1684,7 @@ static bool bark_eval_encoder_internal(
         *n_past += N;
     }
 
-    model.t_predict_us += ggml_time_us() - t_predict_us_start;
+    model.t_predict_us += get_time_us() - t_predict_us_start;
 
     return true;
 }
@@ -1740,7 +1750,7 @@ static bool bark_eval_text_encoder(struct bark_context* bctx, int n_threads) {
 }
 
 bool bark_forward_text_encoder(struct bark_context* bctx, int n_threads) {
-    const int64_t t_main_start_us = ggml_time_us();
+    const int64_t t_main_start_us = get_time_us();
 
     auto& model = bctx->text_model.semantic_model;
     auto& allocr = bctx->allocr;
@@ -1777,7 +1787,7 @@ bool bark_forward_text_encoder(struct bark_context* bctx, int n_threads) {
         return false;
     }
 
-    model.t_main_us = ggml_time_us() - t_main_start_us;
+    model.t_main_us = get_time_us() - t_main_start_us;
     bctx->stats.t_semantic_us = model.t_main_us;
 
     bark_print_statistics(&model);
@@ -1912,7 +1922,7 @@ static bool bark_eval_coarse_encoder(struct bark_context* bctx, int n_threads) {
 }
 
 bool bark_forward_coarse_encoder(struct bark_context* bctx, int n_threads) {
-    const int64_t t_main_start_us = ggml_time_us();
+    const int64_t t_main_start_us = get_time_us();
 
     auto& model = bctx->text_model.coarse_model;
     auto& allocr = bctx->allocr;
@@ -1949,7 +1959,7 @@ bool bark_forward_coarse_encoder(struct bark_context* bctx, int n_threads) {
         return false;
     }
 
-    model.t_main_us = ggml_time_us() - t_main_start_us;
+    model.t_main_us = get_time_us() - t_main_start_us;
     bctx->stats.t_coarse_us = model.t_main_us;
 
     bark_print_statistics(&model);
@@ -1976,7 +1986,7 @@ static bool bark_eval_fine_encoder_internal(
 
     const int n_fine_codebooks = params.n_fine_codebooks;
 
-    const int64_t t_predict_us_start = ggml_time_us();
+    const int64_t t_predict_us_start = get_time_us();
 
     // reset the allocator to free all the memory allocated during the previous inference
     ggml_allocr_reset(allocr);
@@ -2002,7 +2012,7 @@ static bool bark_eval_fine_encoder_internal(
 
     ggml_backend_tensor_get(inpL, logits.data(), 0, sizeof(float) * n_vocab * block_size);
 
-    model.t_predict_us += ggml_time_us() - t_predict_us_start;
+    model.t_predict_us += get_time_us() - t_predict_us_start;
 
     return true;
 }
@@ -2108,7 +2118,7 @@ static bool bark_eval_fine_encoder(struct bark_context* bctx, int n_threads) {
 }
 
 bool bark_forward_fine_encoder(struct bark_context* bctx, int n_threads) {
-    const int64_t t_main_start_us = ggml_time_us();
+    const int64_t t_main_start_us = get_time_us();
 
     auto& model = bctx->text_model.fine_model;
     auto& allocr = bctx->allocr;
@@ -2147,7 +2157,7 @@ bool bark_forward_fine_encoder(struct bark_context* bctx, int n_threads) {
         return false;
     }
 
-    model.t_main_us = ggml_time_us() - t_main_start_us;
+    model.t_main_us = get_time_us() - t_main_start_us;
     bctx->stats.t_fine_us = model.t_main_us;
 
     bark_print_statistics(&model);
@@ -2185,7 +2195,7 @@ bool bark_generate_audio(struct bark_context* bctx, const char* text, int n_thre
 
     bark_reset_statistics(bctx);
 
-    int64_t t_start_eval_us = ggml_time_us();
+    int64_t t_start_eval_us = get_time_us();
 
     std::string text_str(text);
     bark_tokenize_input(bctx, text_str);
@@ -2221,7 +2231,7 @@ bool bark_generate_audio(struct bark_context* bctx, const char* text, int n_thre
     bctx->generated_audio = encodec_get_audio(bctx->encodec_ctx);
     bctx->n_generated_samples = encodec_get_audio_size(bctx->encodec_ctx);
 
-    bctx->stats.t_eval_us = ggml_time_us() - t_start_eval_us;
+    bctx->stats.t_eval_us = get_time_us() - t_start_eval_us;
 
     return true;
 }
