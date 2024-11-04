@@ -87,6 +87,9 @@ extern "C" {
         // Temperature for sampling (fine encoder)
         float fine_temp;
 
+        // Number of layers to run on GPU
+        int32_t n_gpu_layers;
+
         // Minimum probability for EOS token (text encoder)
         float min_eos_p;
         // Sliding window size for coarse encoder
