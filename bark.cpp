@@ -1191,6 +1191,10 @@ struct bark_context* bark_load_model(const char* model_path, struct bark_context
 
     bctx->text_model = bark_model();
     std::string model_path_str(model_path);
+
+    // Set n_gpu_layers from params
+    bctx->n_gpu_layers = params.n_gpu_layers;
+
     if (!bark_load_model_from_file(model_path_str, bctx, params.verbosity)) {
         fprintf(stderr, "%s: failed to load model weights from '%s'\n", __func__, model_path);
         return nullptr;
@@ -2268,6 +2272,7 @@ struct bark_context_params bark_context_default_params() {
         /*.verbosity                   =*/bark_verbosity_level::LOW,
         /*.temp                        =*/0.7,
         /*.fine_temp                   =*/0.5,
+        /*.n_gpu_layers                =*/0,  // Default to CPU-only
         /*.min_eos_p                   =*/0.2,
         /*.sliding_window_size         =*/60,
         /*.max_coarse_history          =*/630,
