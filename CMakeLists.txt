@@ -71,13 +71,5 @@ install(TARGETS ${BARK_LIB}
     RUNTIME DESTINATION bin
 )
 
-if(BUILD_SHARED_LIBS)
-    install(TARGETS ${BARK_LIB}_shared
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
-endif()
-
 # Install header files
 install(FILES bark.h DESTINATION include)
