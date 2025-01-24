@@ -21,6 +21,9 @@ set(BARK_LIB bark)
 
 add_subdirectory(encodec.cpp)
 
+# Override the output name of ggml
+set_target_properties(ggml PROPERTIES OUTPUT_NAME "ggml-bark") # Rename ggml to ggml-bark
+
 # Build either shared or static library based on BUILD_SHARED_LIBS
 if(BUILD_SHARED_LIBS)
     add_library(${BARK_LIB} SHARED bark.cpp bark.h)
@@ -44,6 +47,7 @@ if (BARK_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
+# Note: "ggml" is the internal target name in CMake, its output file name has been changed to "ggml-bark".
 target_link_libraries(${BARK_LIB} PUBLIC ggml encodec)
 target_include_directories(${BARK_LIB} PUBLIC .)
 target_compile_features(${BARK_LIB} PUBLIC cxx_std_11)
